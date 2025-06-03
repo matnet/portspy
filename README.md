@@ -1,9 +1,7 @@
-<<<<<<< HEAD
 # portspy
 Tiny Linux utility to inspect port usage and associated processes
 =======
 # portspy - Tiny Linux Port Inspector Utility
->>>>>>> ff937f4 (Add .gitignore and README.md)
 
 `portspy` is a simple Python utility to quickly identify which process is listening on a specific port, or list all listening ports with their associated processes.
 
