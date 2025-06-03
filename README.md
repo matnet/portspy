@@ -21,10 +21,10 @@ Tiny Linux utility to inspect port usage and associated processes
 ## Installation
 
 1.  **Download and Extract:**
-    Download the `portspy_package.tar.gz` file and extract it:
+    Download the `portspy.tar.gz` file and extract it:
     ```bash
-    tar -xzvf portspy_package.tar.gz
-    cd portspy_package
+    tar -xzvf portspy.tar.gz
+    cd portspy
     ```
 
 2.  **Run the Installer:**
