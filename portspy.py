@@ -51,11 +51,28 @@ def get_process_info(pid):
         user = "N/A"
     return command, user
 
-def parse_net_file(filepath, target_port=None, target_inode=None, protocol_name="tcp"):
+def parse_net_file(filepath, target_port=None, target_inode=None, protocol_name="tcp", filter_listen_only=True):
     """
     Parses /proc/net/tcp, /proc/net/udp files.
-    Returns a dictionary {inode: {"local_port": port, "state": state, "protocol": proto_name}}
-    or {port: {"inode": inode, "state": state, "protocol": proto_name}} if target_inode is used for reverse lookup.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the proc net file.
+    target_port : int, optional
+        If provided, only sockets matching this port are returned.
+    target_inode : str, optional
+        If provided, perform a reverse lookup to get the port for this inode.
+    protocol_name : str
+        Base protocol name ("tcp" or "udp"). For IPv6 files the suffix "6" will be appended.
+    filter_listen_only : bool, optional
+        When True (default), only TCP sockets in state LISTEN are returned.
+        Set to False when searching all sockets for a specific PID.
+
+    Returns
+    -------
+    dict
+        {inode: {...}} when looking up ports, or {port: {...}} when looking up by inode.
     """
     results = {}
     try:
@@ -70,8 +87,8 @@ def parse_net_file(filepath, target_port=None, target_inode=None, protocol_name=
                 state = parts[3]
                 inode = parts[9] # Inode number of the socket
 
-                if protocol_name.startswith("tcp") and state != TCP_LISTEN:
-                    continue # For TCP, only show listening sockets
+                if filter_listen_only and protocol_name.startswith("tcp") and state != TCP_LISTEN:
+                    continue # For TCP, only show listening sockets unless overridden
 
                 if ":" in local_address: # IPv4 or IPv6
                     if filepath.endswith("6"): # IPv6
@@ -169,10 +186,10 @@ def find_ports_for_pid(target_pid):
     all_socket_info = {}
     for inode in socket_inodes:
         # For TCP, we are interested in any state, not just LISTEN
-        tcp_sockets = parse_net_file(PROC_NET_TCP, target_inode=inode, protocol_name="tcp")
-        tcp6_sockets = parse_net_file(PROC_NET_TCP6, target_inode=inode, protocol_name="tcp") # proto is tcp6 later
-        udp_sockets = parse_net_file(PROC_NET_UDP, target_inode=inode, protocol_name="udp")
-        udp6_sockets = parse_net_file(PROC_NET_UDP6, target_inode=inode, protocol_name="udp") # proto is udp6 later
+        tcp_sockets = parse_net_file(PROC_NET_TCP, target_inode=inode, protocol_name="tcp", filter_listen_only=False)
+        tcp6_sockets = parse_net_file(PROC_NET_TCP6, target_inode=inode, protocol_name="tcp", filter_listen_only=False) # proto is tcp6 later
+        udp_sockets = parse_net_file(PROC_NET_UDP, target_inode=inode, protocol_name="udp", filter_listen_only=False)
+        udp6_sockets = parse_net_file(PROC_NET_UDP6, target_inode=inode, protocol_name="udp", filter_listen_only=False) # proto is udp6 later
 
         for port, info in tcp_sockets.items():
             all_socket_info[(port, "tcp", inode)] = info
